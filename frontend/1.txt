@@ -1,0 +1,26 @@
+ Volume in drive D is Disk
+ Volume Serial Number is 0DFE-7355
+
+ Directory of D:\rule-based-graph\free-nextjs-admin-dashboard-main
+
+07/16/2025  03:54 AM    <DIR>          .
+07/16/2025  03:54 AM    <DIR>          ..
+05/14/2025  10:44 PM                40 .eslintrc.json
+05/14/2025  10:44 PM               398 .gitignore
+05/14/2025  10:44 PM    <DIR>          .idea
+07/16/2025  03:54 AM                 0 1.txt
+05/14/2025  10:44 PM         1,430,718 banner.png
+05/14/2025  10:44 PM               393 eslint.config.mjs
+05/14/2025  10:44 PM                93 jsvectormap.d.ts
+05/14/2025  10:44 PM             1,066 LICENSE
+05/14/2025  10:44 PM               268 next.config.ts
+05/14/2025  10:44 PM           321,864 package-lock.json
+05/14/2025  10:44 PM             1,622 package.json
+05/14/2025  10:44 PM                72 postcss.config.js
+05/14/2025  10:44 PM                66 prettier.config.js
+05/14/2025  10:44 PM    <DIR>          public
+05/14/2025  10:44 PM             6,307 README.md
+05/14/2025  10:44 PM    <DIR>          src
+05/14/2025  10:44 PM               602 tsconfig.json
+              14 File(s)      1,763,509 bytes
+               5 Dir(s)  112,417,460,224 bytes free
