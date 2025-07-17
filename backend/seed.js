@@ -55,6 +55,8 @@ async function seed() {
         characterSet: [...charSet],
       });
 
+      console.log(createdRow);
+
       allDatasets.push({ _id: createdRow._id, tableName, rowData: row });
 
       // --- Create intra-row relationships: relate one column to 3 others in the same row ---
@@ -72,7 +74,7 @@ async function seed() {
             value: row[col],
           }));
 
-          await Relationship.create({
+          const relationship = await Relationship.create({
             from: {
               tableName,
               rowId: createdRow._id,
@@ -82,6 +84,8 @@ async function seed() {
             to: relatedFields[0], // You can create multiple relationship docs or customize
             reason: "intra-row",
           });
+
+          console.log(relationship);
 
           // Optionally create more 'to' relationships or multiple Relationship docs per fromCol
           // For example:
