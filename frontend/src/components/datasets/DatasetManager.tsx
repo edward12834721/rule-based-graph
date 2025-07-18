@@ -44,7 +44,7 @@ const DatasetManager: React.FC = () => {
       router.push('/');
     }
 
-    const socket = io("http://localhost:5000");
+    const socket = io(backendUrl);
 
     socket.on("graphUpdated", () => {
       console.log("Received graphUpdated event");
