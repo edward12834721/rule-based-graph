@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
+  baseURL: 'https://rule-based-graph.onrender.com'
 };
 
 export default nextConfig;

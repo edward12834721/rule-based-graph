@@ -1,17 +1,43 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import dynamic from "next/dynamic";
 import axios from "axios";
+const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+//import ForceGraph3D from "react-force-graph-3d";
 
-const ForceGraph3D = dynamic(() => import("react-force-graph").then(mod => mod.ForceGraph3D), {
-  ssr: false,
-});
+import dynamic from 'next/dynamic'
+const ForceGraph3D = dynamic(
+  () => import('react-force-graph-3d'),
+  { ssr: false }
+)
+
+// const ForceGraph3D = dynamic(() => import("react-force-graph").then(mod => mod.ForceGraph3D), {
+//   ssr: false,
+// });
+
+type NodeType = {
+  id: string | number;
+  label?: string;
+  char?: string[];
+  tags?: string[];
+  group?: string;
+};
+
+type LinkType = {
+  source: string | number | NodeType;
+  target: string | number | NodeType;
+};
+
+type GraphDataType = {
+  nodes: NodeType[];
+  links: LinkType[];
+};
 
 const RelationshipGraph = () => {
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+  const [graphData, setGraphData] = useState<GraphDataType>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
-  const [hoverNode, setHoverNode] = useState(null);
-  const fgRef = useRef();
+  const [hoverNode, setHoverNode] = useState<NodeType | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fgRef = useRef<any>(null);
 
   useEffect(() => {
     fetchGraph();
@@ -20,7 +46,7 @@ const RelationshipGraph = () => {
   const fetchGraph = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/relationships/graph");
+      const res = await axios.get(`${backendUrl}/api/relationships/graph`);
       setGraphData(res.data);
     } catch (err) {
       console.error("Failed to fetch graph:", err);
@@ -30,10 +56,11 @@ const RelationshipGraph = () => {
   };
 
   // Helper: get all connected nodes within N hops (e.g., 2)
-  const getMultiHopNeighbors = (node, hops = 2) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getMultiHopNeighbors = (node: any, hops = 2) => {
     if (!node) return new Set();
 
-    let neighbors = new Set([node.id]);
+    const neighbors = new Set([node.id]);
     let currentLevel = new Set([node.id]);
 
     for (let i = 0; i < hops; i++) {
@@ -68,9 +95,22 @@ const RelationshipGraph = () => {
       ) : (
         <ForceGraph3D
           ref={fgRef}
-          width="1200"
+          width={1200}
           graphData={graphData}
-          onNodeHover={setHoverNode}
+          onNodeHover={node => {
+            if (node && typeof node.id !== "undefined") {
+              // Cast node to NodeType, ensuring id is defined
+              setHoverNode({
+                id: node.id,
+                label: node.label,
+                char: node.char,
+                tags: node.tags,
+                group: node.group
+              });
+            } else {
+              setHoverNode(null);
+            }
+          }}
           nodeLabel={node => {
             const associatedTags = node.char || node.tags || "None";
             return `

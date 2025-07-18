@@ -1,9 +1,8 @@
 "use client";
-import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
+import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 import axios from 'axios';
@@ -12,13 +11,13 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
 
   const router = useRouter();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
   const { setUser } = useAuth();
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,17 +28,21 @@ export default function SignInForm() {
     setError('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-      const { token, user } = res.data;
+      const res = await axios.post(`${backendUrl}/api/auth/login`, formData);
+      const { token } = res.data;
 
       localStorage.setItem("token", token);
       const payload = JSON.parse(atob(token.split(".")[1]));
-      setUser({ email: payload.email, role: payload.role });
+      setUser(payload);
 
       localStorage.setItem("user", JSON.stringify({ email: payload.email, role: payload.role })); // Save user to localStorage
       router.push('/'); // redirect after login
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Login failed');
+      } else {
+        setError('Login failed');
+      }
     }
   };
 
@@ -62,12 +65,12 @@ export default function SignInForm() {
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" name="email"
+                  <Input  type="email" name="email"
                     placeholder="Email"
                     className="border p-2 w-full mb-2"
-                    value={formData.email}
+                    defaultValue={formData.email}
                     onChange={handleChange}
-                    required />
+                   />
                 </div>
                 <div>
                   <Label>
@@ -76,13 +79,11 @@ export default function SignInForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
                       name="password"
                       placeholder="Password"
                       className="border p-2 w-full mb-4"
-                      value={formData.password}
+                      defaultValue={formData.password}
                       onChange={handleChange}
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}

@@ -5,7 +5,7 @@ import axios from "axios";
 import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
+import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 
@@ -22,22 +22,26 @@ export default function SignUpForm() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  const handleChange = (e) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChange = (e: any) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/signup", formData);
+      await axios.post(`${backendUrl}/api/auth/signup`, formData);
       // optionally store token or redirect
       router.push("/signin");
-    } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
@@ -70,9 +74,8 @@ export default function SignUpForm() {
                       name="firstName"
                       type="text"
                       placeholder="Enter your first name"
-                      value={formData.firstName}
+                      defaultValue={formData.firstName}
                       onChange={handleChange}
-                      required
                     />
                   </div>
                   {/* <!-- Last Name --> */}
@@ -85,9 +88,8 @@ export default function SignUpForm() {
                       id="lastName"
                       name="lastName"
                       placeholder="Enter your last name"
-                      value={formData.lastName}
+                      defaultValue={formData.lastName}
                       onChange={handleChange}
-                      required
                     />
                   </div>
                 </div>
@@ -101,9 +103,8 @@ export default function SignUpForm() {
                     id="email"
                     name="email"
                     placeholder="Enter your email"
-                    value={formData.email}
+                    defaultValue={formData.email}
                     onChange={handleChange}
-                    required
                   />
                 </div>
                 {/* <!-- Password --> */}
@@ -117,9 +118,8 @@ export default function SignUpForm() {
                       name="password"
                       placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
-                      value={formData.password}
+                      defaultValue={formData.password}
                       onChange={handleChange}
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -162,7 +162,7 @@ export default function SignUpForm() {
                 </div>
               </div>
             </form>
-
+            {error && <p className="mt-4 text-red-500">{error}</p>}
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Already have an account?

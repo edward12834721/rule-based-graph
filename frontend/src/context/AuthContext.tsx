@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 
 type User = {
   id: string;
@@ -45,7 +44,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('user');
     setUser(null);
     setLoading(false);
-    window.location.href = '/signin';
+    if (typeof window !== "undefined") {
+      window.location.href = '/signin';
+    }
   };
 
   return (

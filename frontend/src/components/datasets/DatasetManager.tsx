@@ -5,19 +5,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { io } from "socket.io-client"; // Socket.IO client
 import { useRouter } from 'next/navigation';
+const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const DatasetManager: React.FC = () => {
-  const [datasets, setDatasets] = useState([]);
-  const [filtered, setFiltered] = useState([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [datasets, setDatasets] = useState<any>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [filtered, setFiltered] = useState<any>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(PAGE_SIZE_OPTIONS[0]);
   const [editRow, setEditRow] = useState<string | null>(null);
   const [editRowData, setEditRowData] = useState<string>("");
-  const [editCharacterSet, setEditCharacterSet] = useState<string>("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newDataset, setNewDataset] = useState({
     tableName: '',
@@ -36,7 +38,8 @@ const DatasetManager: React.FC = () => {
 
   // Real-time Socket.IO updates
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('user'));
+    const user = localStorage.getItem('user')
+    const stored = JSON.parse(user || '{}');
     if (!stored || stored.role === "Viewer") {
       router.push('/');
     }
@@ -58,7 +61,7 @@ const DatasetManager: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
 
-      const res = await axios.get('http://localhost:5000/api/datasets', {
+      const res = await axios.get(`${backendUrl}//api/datasets`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -74,8 +77,10 @@ const DatasetManager: React.FC = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearch(term);
-    const filteredResults = datasets.filter((d) =>
-      Object.values(d.rowData || {}).some((v) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filteredResults = datasets.filter((d: any) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Object.values(d.rowData || {}).some((v: any) =>
         v.toString().toLowerCase().includes(term.toLowerCase())
       )
     );
@@ -99,18 +104,24 @@ const DatasetManager: React.FC = () => {
 
       const token = localStorage.getItem("token");
 
-      const res = await axios.post("http://localhost:5000/api/datasets", payload, {
+      const res = await axios.post(`${backendUrl}/api/datasets`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setDatasets(prev => [...prev, res.data]);
-      setFiltered(prev => [...prev, res.data]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setDatasets((prev: any[]) => [...prev, res.data]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setFiltered((prev: any[]) => [...prev, res.data]);
       setShowAddModal(false);
       setNewDataset({ tableName: "", characterSet: "", rowData: "" });
-    } catch (err: any) {
-      alert("Failed to add dataset: " + (err?.response?.data?.message || err.message));
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        alert("Failed to add dataset: " + err.response?.data?.message);
+      } else {
+        alert("Failed to add dataset");
+      }
     }
   };
 
@@ -125,7 +136,7 @@ const DatasetManager: React.FC = () => {
 
       const token = localStorage.getItem("token"); // Or however you store the token
 
-      const res = await axios.put(`http://localhost:5000/api/datasets/${id}`, {
+      const res = await axios.put(`${backendUrl}/api/datasets/${id}`, {
         rowData: parsedRowData,
         characterSet: newCharacterSet,
       }, {
@@ -138,11 +149,12 @@ const DatasetManager: React.FC = () => {
       // await axios.post('/api/relationships/recalculate', { datasetId: id });
 
       // Update local state
-      setDatasets((prev) => prev.map((d) => (d._id === id ? res.data : d)));
-      setFiltered((prev) => prev.map((d) => (d._id === id ? res.data : d)));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setDatasets((prev: any) => prev.map((d: any) => (d._id === id ? res.data : d)));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setFiltered((prev: any) => prev.map((d: any) => (d._id === id ? res.data : d)));
 
       setEditRow(null);
-      setEditCharacterSet("");
       setEditRowData("");
     } catch (err) {
       console.error("Save failed:", err);
@@ -150,24 +162,26 @@ const DatasetManager: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = window.confirm("Are you sure you want to delete this dataset?");
+    let confirmed = true;
+    if (typeof window !== "undefined") {
+      confirmed = window.confirm("Are you sure you want to delete this dataset?");
+    }
     if (!confirmed) return;
-
     try {
-      const token = localStorage.getItem("token"); // Or however you store the token
-
-      await axios.delete(`http://localhost:5000/api/datasets/${id}`, {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${backendUrl}/api/datasets/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         }
       });
-      setDatasets(prev => prev.filter(d => d._id !== id));
-      setFiltered(prev => prev.filter(d => d._id !== id));
-    } catch (err: any) {
-      alert("Failed to delete dataset: " + err.message);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setDatasets((prev: any) => prev.filter((d: any) => d._id !== id));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setFiltered((prev: any) => prev.filter((d: any) => d._id !== id));
+    } catch (err) {
+      alert("Failed to delete dataset" + err);
     }
   };
-
   // Pagination numbers logic (max 5 numbers + ... if needed)
   const getPageNumbers = () => {
     if (totalPages <= 5) {
@@ -289,7 +303,8 @@ const DatasetManager: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  paginatedData.map((d) => (
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  paginatedData.map((d: any) => (
                     <tr key={d._id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 border border-gray-100 whitespace-nowrap font-medium text-gray-900">
                         {d.tableName}
@@ -317,9 +332,10 @@ const DatasetManager: React.FC = () => {
                                   placeholder="Key"
                                   className="w-1/3 border rounded px-2 py-1 text-sm"
                                 />
+
                                 <input
                                   type="text"
-                                  value={value}
+                                  value={value as string}
                                   onChange={(e) => {
                                     const newData = JSON.parse(editRowData || "{}");
                                     newData[key] = e.target.value;
@@ -433,7 +449,6 @@ const DatasetManager: React.FC = () => {
                               <button
                                 onClick={() => {
                                   setEditRow(d._id);
-                                  setEditCharacterSet((d.characterSet || []).join(", "));
                                   setEditRowData(JSON.stringify(d.rowData || {}, null, 2));
                                 }}
                                 className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white/90"
@@ -524,6 +539,7 @@ const DatasetManager: React.FC = () => {
                 <form
                   onSubmit={e => {
                     e.preventDefault();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const pageInput = (e.target as any).page.value;
                     const pageNum = Number(pageInput);
                     if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
@@ -588,7 +604,7 @@ const DatasetManager: React.FC = () => {
                         />
                         <input
                           type="text"
-                          value={value}
+                          value={value as string}
                           onChange={(e) => {
                             const newData = JSON.parse(newDataset.rowData || '{}');
                             newData[key] = e.target.value;

@@ -1,16 +1,13 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   TableIcon,
-  EyeIcon,
-  CalenderIcon,
-  ListIcon
+  EyeIcon
 } from "../icons/index";
-import SidebarWidget from "./SidebarWidget";
 import { useAuth } from '@/context/AuthContext';
 
 type NavItem = {
@@ -30,15 +27,10 @@ const baseNavItems: NavItem[] = [
     name: "Graph",
     path: "/graph",
   },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
 ];
 
 const AppSidebar: React.FC = () => {
-  const { user, isAdmin, isViewer, loading } = useAuth();
+  const {  isViewer, loading } = useAuth();
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
   const isActive = useCallback((path: string) => path === pathname, [pathname]);
@@ -98,7 +90,7 @@ const AppSidebar: React.FC = () => {
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
               >
-                {isExpanded || isHovered || isMobileOpen ? "Menu" : <HorizontaLDots />}
+                {/* {isExpanded || isHovered || isMobileOpen ? "Menu" : <HorizontaLDots />} */}
               </h2>
               <ul className="flex flex-col gap-4">
                 {navItems.map((nav) => (
