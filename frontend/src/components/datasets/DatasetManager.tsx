@@ -61,7 +61,7 @@ const DatasetManager: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
 
-      const res = await axios.get(`${backendUrl}//api/datasets`, {
+      const res = await axios.get(`${backendUrl}/api/datasets`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
