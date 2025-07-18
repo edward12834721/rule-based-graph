@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Dataset = require('../models/Dataset');
 const Relationship = require('../models/Relationship');
+const faker = require('faker');
 const { requireAuth } = require('../middlewares/auth'); // import your middleware
 const { requireRole } = require('../middlewares/role'); // import role middleware
 
@@ -32,7 +33,7 @@ router.post('/', requireAuth, requireRole('Admin'), async (req, res) => {
     const { tableName, rowData, characterSet } = req.body;
     const newDataset = new Dataset({ tableName, rowData, characterSet });
     await newDataset.save();
-    
+
     const relationships = await recalculateRelationshipsForDataset(newDataset._id);
     res.status(201).json(newDataset);
   } catch (err) {
@@ -46,23 +47,106 @@ async function recalculateRelationshipsForDataset(datasetId) {
   const dataset = await Dataset.findById(datasetId);
   if (!dataset) throw new Error("Dataset not found");
 
-  const newRelationships = [];
-  const dataEntries = Object.entries(dataset.rowData || {});
+  await Relationship.deleteMany({ 'from.rowId': dataset._id });
+  await Relationship.deleteMany({ 'to.rowId': dataset._id });
+  
+  // --- Create intra-row relationships: relate one column to 3 others in the same row ---
+  const entries = Object.fromEntries(dataset.rowData.entries());
+  const columns = Object.keys(entries);
+  if (columns.length >= 4) {
+    for (let fromCol of columns) {
+      
+      // Select 3 other columns randomly
+      const otherCols = columns.filter(c => c !== fromCol);
+      const relatedCols = faker.helpers.shuffle(otherCols).slice(0, 3);
 
-  for (let i = 0; i < dataEntries.length; i++) {
-    for (let j = i + 1; j < dataEntries.length; j++) {
-      newRelationships.push({
-        source: dataEntries[i][0],
-        target: dataEntries[j][0],
-        datasetId: dataset._id,
+      const relatedFields = relatedCols.map(col => ({
+        tableName: dataset.tableName,
+        rowId: dataset._id,
+        column: col,
+        value: entries[col],
+      }));
+
+      await Relationship.create({
+        from: {
+          tableName: dataset.tableName,
+          rowId: dataset._id,
+          column: fromCol,
+          value: entries[fromCol],
+        },
+        to: relatedFields[0], // You can create multiple relationship docs or customize
+        reason: "intra-row",
       });
+
+      // Optionally create more 'to' relationships or multiple Relationship docs per fromCol
+      // For example:
+      for (let i = 1; i < relatedFields.length; i++) {
+        await Relationship.create({
+          from: {
+            tableName: dataset.tableName,
+            rowId: dataset._id,
+            column: fromCol,
+            value: entries[fromCol],
+          },
+          to: relatedFields[i],
+          reason: "intra-row",
+        });
+      }
     }
   }
 
-  await Relationship.deleteMany({ datasetId: dataset._id });
-  await Relationship.insertMany(newRelationships);
+  const allDatasets = await Dataset.find({ _id: { $ne: datasetId } });
+  const from = faker.random.arrayElement(allDatasets);
+  const to = faker.random.arrayElement(allDatasets);
 
-  return newRelationships;
+  console.log('from:', from);
+  console.log('to:', to);
+
+  if (dataset._id.equals(to._id) || dataset._id.equals(from._id))
+    return;
+
+  const myCols = entries;
+  const fromCols = Object.fromEntries(from.rowData.entries());
+  const toCols = Object.fromEntries(to.rowData.entries());
+
+  if (fromCols.length === 0 || toCols.length === 0)
+    return;
+
+  const myCol = faker.random.arrayElement(myCols);
+  const fromCol = faker.random.arrayElement(fromCols);
+  const toCol = faker.random.arrayElement(toCols);
+
+  await Relationship.create({
+    from: {
+      tableName: dataset.tableName,
+      rowId: dataset._id,
+      column: myCol,
+      value: myCols[myCol],
+    },
+    to: {
+      tableName: to.tableName,
+      rowId: to._id,
+      column: toCol,
+      value: to.rowData[toCol],
+    },
+    reason: "semantic", // optional
+  });
+
+  await Relationship.create({
+    from: {
+      tableName: from.tableName,
+      rowId: from._id,
+      column: fromCol,
+      value: from.rowData[fromCol],
+    },
+    to: {
+      tableName: dataset.tableName,
+      rowId: dataset._id,
+      column: myCol,
+      value: myCols[myCol],
+    },
+    reason: "semantic", // optional
+  });
 }
 
 // UPDATE dataset — Admin only
@@ -104,6 +188,9 @@ router.put('/:id', requireAuth, requireRole('Admin'), async (req, res) => {
 // DELETE dataset — Admin only
 router.delete('/:id', requireAuth, requireRole('Admin'), async (req, res) => {
   try {
+    await Relationship.deleteMany({ 'from.rowId': req.params.id });
+    await Relationship.deleteMany({ 'to.rowId': req.params.id });
+
     const dataset = await Dataset.findByIdAndDelete(req.params.id);
     if (!dataset) return res.status(404).json({ error: 'Not found' });
     res.json({ message: 'Deleted successfully' });
