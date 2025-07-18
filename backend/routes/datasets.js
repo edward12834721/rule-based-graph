@@ -99,8 +99,8 @@ async function recalculateRelationshipsForDataset(datasetId) {
   const from = faker.random.arrayElement(allDatasets);
   const to = faker.random.arrayElement(allDatasets);
 
-  console.log('from:', from);
-  console.log('to:', to);
+  // console.log('from:', from);
+  // console.log('to:', to);
 
   if (dataset._id.equals(to._id) || dataset._id.equals(from._id))
     return;
@@ -112,9 +112,15 @@ async function recalculateRelationshipsForDataset(datasetId) {
   if (fromCols.length === 0 || toCols.length === 0)
     return;
 
-  const myCol = faker.random.arrayElement(myCols);
-  const fromCol = faker.random.arrayElement(fromCols);
-  const toCol = faker.random.arrayElement(toCols);
+  const myCol = faker.random.arrayElement(Object.keys(myCols));
+  const fromCol = faker.random.arrayElement(Object.keys(fromCols)); 
+  const toCol = faker.random.arrayElement(Object.keys(toCols));
+  // console.log('myCol:', myCol);
+  // console.log('fromCol:', fromCol);
+  // console.log('toCol:', toCol);
+  // const myCol = faker.random.arrayElement(myCols);
+  // const fromCol = faker.random.arrayElement(fromCols);
+  // const toCol = faker.random.arrayElement(toCols);
 
   await Relationship.create({
     from: {
@@ -127,7 +133,7 @@ async function recalculateRelationshipsForDataset(datasetId) {
       tableName: to.tableName,
       rowId: to._id,
       column: toCol,
-      value: to.rowData[toCol],
+      value: toCols[toCol],
     },
     reason: "semantic", // optional
   });
@@ -137,7 +143,7 @@ async function recalculateRelationshipsForDataset(datasetId) {
       tableName: from.tableName,
       rowId: from._id,
       column: fromCol,
-      value: from.rowData[fromCol],
+      value: fromCols[fromCol],
     },
     to: {
       tableName: dataset.tableName,
